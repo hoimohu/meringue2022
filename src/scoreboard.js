@@ -2,7 +2,7 @@ let runkey;
 (function init() {
     const key = Symbol();
     runkey = key;
-    let sock = new WebSocket("ws://127.0.0.1:3000");
+    let sock = new WebSocket("wss://cooperative-cliff-grenadilla.glitch.me");
 
     function send(m) {
         if (sock != null && key === runkey) {
