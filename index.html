@@ -1,36 +1,34 @@
 <!DOCTYPE html>
 <html lang="ja">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="robots" content="noindex,nofollow" />
-    <title>得点表</title>
-    <link rel="stylesheet" href="main.css" />
-    <link
-      rel="icon"
-      href="https://cdn.glitch.global/5c687ebe-95b8-4c76-913d-3685e6d8204c/icon.png?v=1659331384970"
-    />
-  </head>
 
-  <body>
-    <canvas id="background"></canvas>
-    <div id="content">
-      <div>
-        <label
-          >種目を選択
-          <select id="category" title="カテゴリーを選択できます"></select>
-        </label>
-        <div class="tool">
-          <div id="create">+</div>
-          <div id="sort">↑↓</div>
-        </div>
-      </div>
-      <div id="score">
-        <hr />
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>得点表</title>
+  <link rel="stylesheet" href="main.css" />
+  <link rel="icon" href="icon.png" />
+</head>
+
+<body>
+  <canvas id="background"></canvas>
+  <div id="content">
+    <div>
+      <label>種目を選択
+        <select id="category" title="カテゴリーを選択できます"></select>
+      </label>
+      <div class="tool">
+        <div id="create">+</div>
+        <div id="sort">↑↓</div>
       </div>
     </div>
-    <div id="setting">設定</div>
-    <script src="src/background.js"></script>
-    <script src="src/scoreboard.js"></script>
-  </body>
+    <div id="score">
+      <hr />
+    </div>
+  </div>
+  <div id="setting">設定</div>
+  <script src="src/background.js"></script>
+  <script src="src/scoreboard.js"></script>
+</body>
+
 </html>
