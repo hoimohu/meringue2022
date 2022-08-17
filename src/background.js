@@ -1,3 +1,4 @@
+let running = false;
 (function () {
     const canvas = document.getElementById('background');
     const gl = canvas.getContext('webgl');
@@ -16,16 +17,18 @@ gl_Position = a_position;
     const fragmentShaderSource = `precision mediump float;
 uniform float iTime;
 uniform vec2 iResolution;
+uniform float connected;
 
 void main(){
     vec3 d = vec3(abs(sin(iTime / 3.0)) / 2.0, abs(cos(iTime / 3.0)) / 2.0, abs(tan(iTime / 2.0)) / 4.0 + 0.5);
-    gl_FragColor = vec4(gl_FragCoord.xyx / iResolution.xyx / 2.0 + d , 1.0);
+    gl_FragColor = vec4((gl_FragCoord.x / iResolution.x / 2.0 + d.x) * connected, gl_FragCoord.yx / iResolution.yx / 2.0 + d.yz, 1.0);
 }
 `;
 
     const UniformLocation = {
         t: null,
-        r: null
+        r: null,
+        c: null
     };
     let renderkey;
     function init() {
@@ -84,6 +87,7 @@ void main(){
 
             UniformLocation.t = gl.getUniformLocation(program, "iTime");
             UniformLocation.r = gl.getUniformLocation(program, 'iResolution');
+            UniformLocation.c = gl.getUniformLocation(program, 'connected');
 
             const size = 2;
             const type = gl.FLOAT;
@@ -111,6 +115,7 @@ void main(){
 
             gl.uniform1f(UniformLocation.t, (Date.now() - starttime) / 1000);
             gl.uniform2fv(UniformLocation.r, [canvas.width, canvas.height]);
+            gl.uniform1f(UniformLocation.c, ((!running) ? 3 : 1));
 
             let offset = 0;
             const count = 4;

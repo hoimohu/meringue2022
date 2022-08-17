@@ -388,6 +388,9 @@ let runkey;
 
   sock.addEventListener("open", () => {
     if (key === runkey) {
+      if (running != null || running === null) {
+        running = true;
+      }
       console.log("[OPEN]せつぞく済みなり〜");
       const cookie = document.cookie.split("; ");
       cookie.forEach((e) => {
@@ -508,10 +511,10 @@ let runkey;
           if (category.value === m.data.boardname) {
             notice(
               "「" +
-                m.data.boardname +
-                "」の記録は削除されました。（" +
-                m.data.date +
-                "）"
+              m.data.boardname +
+              "」の記録は削除されました。（" +
+              m.data.date +
+              "）"
             );
             send({
               type: "top",
@@ -541,6 +544,9 @@ let runkey;
   sock.addEventListener("close", () => {
     runkey = false;
     sock = null;
+    if (running != null || running === null) {
+      running = false;
+    }
     console.log("[CLOSED]ご利用ありがとうございました。");
     notice("通信が切断されました", init);
   });

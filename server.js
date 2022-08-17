@@ -1,13 +1,43 @@
-const http = require('http');
-const WebSocket = require('ws');
+const http = require("http");
+const WebSocket = require("ws");
 const Database = require("nedb");
 
 const board = {
     top: {
         people: [],
-        date: getNowDate()
-    }
+        date: getNowDate(),
+    },
 };
+
+function boardsort(boardname) {
+    if (boardname !== "top") {
+        if (board[boardname].sort === "up") {
+            board[boardname].score.sort(function (a, b) {
+                let x = a.score - 0;
+                let y = b.score - 0;
+                if (x > y) {
+                    return -1;
+                }
+                if (x < y) {
+                    return 1;
+                }
+                return 0;
+            });
+        } else if (board[boardname].sort === "down") {
+            board[boardname].score.sort(function (a, b) {
+                let x = a.score - 0;
+                let y = b.score - 0;
+                if (x < y) {
+                    return -1;
+                }
+                if (x > y) {
+                    return 1;
+                }
+                return 0;
+            });
+        }
+    }
+}
 
 const db = new Database({ filename: "database.db" });
 
@@ -19,17 +49,49 @@ db.loadDatabase((error) => {
 
     db.find({}, (error, docs) => {
         console.error(error);
-        docs.forEach(e => {
-            if (e.type === 'board') {
+        docs.forEach((e) => {
+            if (e.type === "board") {
                 board[e.boardname] = e;
-            } else if (e.type === 'score') {
+            }
+        });
+        docs.forEach((e) => {
+            if (e.type === "score") {
                 board[e.boardname].score.push(e);
+            }
+        });
+        Object.keys(board).forEach((e) => {
+            if (board[e].score != null) {
+                if (board[e].sort != null) {
+                    board[e].sort = "up";
+                }
+                boardsort(e);
             }
         });
     });
 });
 
-const server = http.createServer();
+const server = http.createServer(function (req, res) {
+    if (req.method === "POST") {
+        let data = "";
+        req
+            .on("data", (chunk) => {
+                if (chunk != null) {
+                    data += chunk.toString();
+                }
+            })
+            .on("end", () => {
+                const postdata = JSON.parse(decodeURIComponent(data));
+                if (postdata.boardname != null && postdata.name != null && postdata.score != null) {
+                    console.log(postdata);
+                    pushscore(postdata.boardname, postdata.name, postdata.score - 0);
+                } else {
+                    console.log(postdata);
+                }
+            });
+    }
+    res.end("ok");
+});
+
 const sock = new WebSocket.Server({ noServer: true });
 
 function broadcast(m) {
@@ -41,16 +103,17 @@ let symbolnum = 1;
 function createboard(boardname, counter) {
     if (!Object.prototype.hasOwnProperty.call(board, boardname)) {
         board[boardname] = {
-            type: 'board',
+            type: "board",
             counter: counter,
             boardname: boardname,
             score: [],
             people: [],
-            date: getNowDate()
+            date: getNowDate(),
+            sort: "up",
         };
         db.insert(board[boardname], (err) => {
             if (err != null) {
-                console.error('[ERROR@createboard]', err);
+                console.error("[ERROR@createboard]", err);
             }
         });
         broadcast({
@@ -59,7 +122,7 @@ function createboard(boardname, counter) {
         });
         return true;
     } else {
-        if (boardname === 'top') {
+        if (boardname === "top") {
             return true;
         } else {
             return false;
@@ -70,31 +133,24 @@ function createboard(boardname, counter) {
 function pushscore(boardname, name, score) {
     if (Object.prototype.hasOwnProperty.call(board, boardname)) {
         const pushdata = {
-            type: 'score',
+            type: "score",
             name: name,
             score: score,
             date: getNowDate(),
             latest: Date.now(),
             id: symbolnum++,
-            boardname: boardname
+            boardname: boardname,
         };
         db.insert(pushdata, (error) => {
             if (error !== null) {
-                console.error('[ERROR@pushscore]', error);
+                console.error("[ERROR@pushscore]", error);
             }
         });
         board[boardname].score.push(pushdata);
-        board[boardname].score.sort(function (a, b) {
-            let x = a.score - 0;
-            let y = b.score - 0;
-            if (x > y) {
-                return -1;
-            }
-            if (x < y) {
-                return 1;
-            }
-            return 0;
-        });
+        if (board[boardname].sort == null) {
+            board[boardname].sort = "up";
+        }
+        boardsort(boardname);
         board[boardname].people.forEach((person) =>
             person({
                 type: "newscore",
@@ -107,18 +163,22 @@ function pushscore(boardname, name, score) {
 function deleteboard(boardname) {
     if (Object.prototype.hasOwnProperty.call(board, boardname)) {
         const now = getNowDate();
-        db.remove({ type: 'score', boardname: boardname }, { multi: true }, function (err) {
-            console.log('[ERROR@deleteboard:s]', err);
-        })
-        db.remove({ type: 'board', boardname: boardname }, {}, function (err) {
-            console.log('[ERROR@deleteboard:b]', err);
+        db.remove(
+            { type: "score", boardname: boardname },
+            { multi: true },
+            function (err) {
+                console.log("[ERROR@deleteboard:s]", err);
+            }
+        );
+        db.remove({ type: "board", boardname: boardname }, {}, function (err) {
+            console.log("[ERROR@deleteboard:b]", err);
         });
         broadcast({
             type: "deleteboard",
             data: {
                 date: now,
-                boardname: boardname
-            }
+                boardname: boardname,
+            },
         });
         delete board[boardname];
     }
@@ -126,9 +186,13 @@ function deleteboard(boardname) {
 
 function deletescore(boardname, id) {
     if (Object.prototype.hasOwnProperty.call(board, boardname)) {
-        db.remove({ type: 'score', boardname: boardname, id: id }, {}, function (err) {
-            console.log('[ERROR@deletescore]', err);
-        });
+        db.remove(
+            { type: "score", boardname: boardname, id: id },
+            {},
+            function (err) {
+                console.log("[ERROR@deletescore]", err);
+            }
+        );
         board[boardname].score = board[boardname].score.filter(
             (score) => score.id !== id
         );
@@ -138,7 +202,7 @@ function deletescore(boardname, id) {
                 data: {
                     boardname: boardname,
                     score: board[boardname].score,
-                    counter: board[boardname].counter
+                    counter: board[boardname].counter,
                 },
             })
         );
@@ -152,29 +216,48 @@ function changescore(boardname, id, name, score) {
                 board[boardname].score[i].latest = Date.now();
                 board[boardname].score[i].name = name;
                 board[boardname].score[i].score = score;
-                db.update({ type: 'score', boardname: boardname, id: id }, board[boardname].score[i], {}, (err) => {
-                    console.log('[ERROR@changescore]', err);
-                });
+                db.update(
+                    { type: "score", boardname: boardname, id: id },
+                    board[boardname].score[i],
+                    {},
+                    (err) => {
+                        console.log("[ERROR@changescore]", err);
+                    }
+                );
             }
         });
-        board[boardname].score.sort(function (a, b) {
-            let x = a.score - 0;
-            let y = b.score - 0;
-            if (x > y) {
-                return -1;
-            }
-            if (x < y) {
-                return 1;
-            }
-            return 0;
-        });
+        if (board[boardname].sort == null) {
+            board[boardname].sort = "up";
+        }
+        boardsort(boardname);
         board[boardname].people.forEach((person) =>
             person({
                 type: "getboard",
                 data: {
                     boardname: boardname,
                     score: board[boardname].score,
-                    counter: board[boardname].counter
+                    counter: board[boardname].counter,
+                },
+            })
+        );
+    }
+}
+
+function changesort(boardname) {
+    if (boardname !== "top") {
+        if (board[boardname].sort === "up" || board[boardname].sort == null) {
+            board[boardname].sort = "down";
+        } else {
+            board[boardname].sort = "up";
+        }
+        boardsort(boardname);
+        board[boardname].people.forEach((person) =>
+            person({
+                type: "getboard",
+                data: {
+                    boardname: boardname,
+                    score: board[boardname].score,
+                    counter: board[boardname].counter,
                 },
             })
         );
@@ -182,23 +265,21 @@ function changescore(boardname, id, name, score) {
 }
 
 sock.on("connection", (ws) => {
-    console.log(
-        "[" +
-        getNowDate() +
-        "]" + 'enter');
+    console.log("[" + getNowDate() + "]" + "enter");
     let nowboard;
     let perm = 1;
 
     const connectiontime = getNowDate();
     const peoplewhenconnection = sock.clients.size;
-    board.top.people.forEach(e =>
+    board.top.people.forEach((e) =>
         e({
             type: "viewers",
             data: {
                 viewers: peoplewhenconnection,
                 date: connectiontime,
-            }
-        }));
+            },
+        })
+    );
 
     function send(message) {
         ws.send(JSON.stringify(message));
@@ -209,12 +290,15 @@ sock.on("connection", (ws) => {
         if (perm > 1) {
             switch (m.type) {
                 case "top":
-                    if (nowboard != null && Object.prototype.hasOwnProperty.call(board, nowboard)) {
+                    if (
+                        nowboard != null &&
+                        Object.prototype.hasOwnProperty.call(board, nowboard)
+                    ) {
                         board[nowboard].people = board[nowboard].people.filter(
                             (person) => person !== send
                         );
                     }
-                    if (Object.prototype.hasOwnProperty.call(board, 'top')) {
+                    if (Object.prototype.hasOwnProperty.call(board, "top")) {
                         board.top.people.push(send);
                         const viewers = sock.clients.size;
                         board.top.people.push(send);
@@ -223,14 +307,17 @@ sock.on("connection", (ws) => {
                             data: {
                                 viewers: viewers,
                                 date: getNowDate(),
-                                board: Object.keys(board)
-                            }
+                                board: Object.keys(board),
+                            },
                         });
-                        nowboard = 'top';
+                        nowboard = "top";
                     }
                     break;
                 case "getboard":
-                    if (nowboard != null && Object.prototype.hasOwnProperty.call(board, nowboard)) {
+                    if (
+                        nowboard != null &&
+                        Object.prototype.hasOwnProperty.call(board, nowboard)
+                    ) {
                         board[nowboard].people = board[nowboard].people.filter(
                             (person) => person !== send
                         );
@@ -243,7 +330,7 @@ sock.on("connection", (ws) => {
                             data: {
                                 boardname: m.data.boardname,
                                 score: board[m.data.boardname].score,
-                                counter: board[m.data.boardname].counter
+                                counter: board[m.data.boardname].counter,
                             },
                         });
                     }
@@ -257,13 +344,13 @@ sock.on("connection", (ws) => {
                     case "createboard":
                         if (!createboard(m.data.boardname, m.data.counter)) {
                             send({
-                                type: 'warndelete',
+                                type: "warndelete",
                                 data: {
-                                    type: 'deleteboard',
+                                    type: "deleteboard",
                                     data: {
-                                        boardname: m.data.boardname
-                                    }
-                                }
+                                        boardname: m.data.boardname,
+                                    },
+                                },
                             });
                         }
                         break;
@@ -276,24 +363,35 @@ sock.on("connection", (ws) => {
                     case "changescore":
                         changescore(m.data.boardname, m.data.id, m.data.name, m.data.score);
                         break;
+                    case "changesort":
+                        changesort(m.data.boardname);
+                        break;
                 }
             }
         } else {
             if (m.type === "password") {
                 switch (m.data.p) {
-                    case "jessicaspark":
+                    case "ilovesugaodoumei":
+                        console.log('☆*: .｡. o(≧▽≦)o .｡.:*☆ HighLevel password!!!');
                         perm = 3;
                         break;
                     case "senkou":
+                        console.log('(^^)LowLevel password');
                         perm = 2;
                         break;
+                    default:
+                        console.log('(><)wrong password!!! "' + m.data.p + '"');
+                        break;
                 }
-                if (nowboard != null && Object.prototype.hasOwnProperty.call(board, nowboard)) {
+                if (
+                    nowboard != null &&
+                    Object.prototype.hasOwnProperty.call(board, nowboard)
+                ) {
                     board[nowboard].people = board[nowboard].people.filter(
                         (person) => person !== send
                     );
                 }
-                if (Object.prototype.hasOwnProperty.call(board, 'top')) {
+                if (Object.prototype.hasOwnProperty.call(board, "top")) {
                     board.top.people.push(send);
                     const viewers = sock.clients.size;
                     send({
@@ -301,8 +399,8 @@ sock.on("connection", (ws) => {
                         data: {
                             viewers: viewers,
                             date: getNowDate(),
-                            board: Object.keys(board)
-                        }
+                            board: Object.keys(board),
+                        },
                     });
                 }
             }
@@ -310,25 +408,26 @@ sock.on("connection", (ws) => {
     });
 
     ws.on("close", () => {
-        if (nowboard != null && Object.prototype.hasOwnProperty.call(board, nowboard)) {
+        if (
+            nowboard != null &&
+            Object.prototype.hasOwnProperty.call(board, nowboard)
+        ) {
             board[nowboard].people = board[nowboard].people.filter(
                 (person) => person !== send
             );
         }
         const closetime = getNowDate();
         const peoplewhenclose = sock.clients.size;
-        board.top.people.forEach(e =>
+        board.top.people.forEach((e) =>
             e({
                 type: "viewers",
                 data: {
                     viewers: peoplewhenclose,
                     date: closetime,
-                }
-            }));
-        console.log(
-            "[" +
-            getNowDate() +
-            "]" + 'out');
+                },
+            })
+        );
+        console.log("[" + getNowDate() + "]" + "out");
     });
 });
 
@@ -360,10 +459,11 @@ function getNowDate() {
 }
 
 const allowedOrigins = [
-    'http://127.0.0.1:5500',
+    "https://koero-3anokabeiii.glitch.me",
+    "https://hoimohu.github.io",
 ];
 
-server.on('upgrade', function (request, socket, head) {
+server.on("upgrade", function (request, socket, head) {
     const origin = request.headers.origin;
 
     console.log(
@@ -374,8 +474,11 @@ server.on('upgrade', function (request, socket, head) {
         "origin: " +
         origin +
         " ip: " +
-        (request.headers["x-forwarded-for"] ?
-            request.headers["x-forwarded-for"] : request.socket && request.socket.remoteAddress ? request.socket.remoteAddress : "0.0.0.0") +
+        (request.headers["x-forwarded-for"]
+            ? request.headers["x-forwarded-for"]
+            : request.socket && request.socket.remoteAddress
+                ? request.socket.remoteAddress
+                : "0.0.0.0") +
         " user-agent: " +
         request.headers["user-agent"]
     );
@@ -385,7 +488,7 @@ server.on('upgrade', function (request, socket, head) {
     }
 
     sock.handleUpgrade(request, socket, head, (ws) => {
-        sock.emit('connection', ws, request);
+        sock.emit("connection", ws, request);
     });
 });
 
