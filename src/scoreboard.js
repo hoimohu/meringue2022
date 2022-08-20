@@ -2,8 +2,8 @@ let runkey;
 (function init(closecounter = 0) {
   const key = Symbol();
   runkey = key;
-  let sock = new WebSocket("ws://127.0.0.1:3000");
-  // let sock = new WebSocket("wss://cooperative-cliff-grenadilla.glitch.me");
+  // let sock = new WebSocket("ws://127.0.0.1:3000");
+  let sock = new WebSocket("wss://cooperative-cliff-grenadilla.glitch.me");
 
   function send(m) {
     if (sock != null && key === runkey) {
@@ -86,15 +86,15 @@ let runkey;
         const bigparent = document.createElement('div');
         firstbox.classList.remove('none');
         backvideo.classList.remove('none');
-        const bigrankbox = document.createElement("div");
-        bigrankbox.innerText = category.value;
         const bignamebox = document.createElement("div");
         bignamebox.innerText = name;
+        const bigrankbox = document.createElement("div");
+        bigrankbox.innerText = category.value;
         const bigscorebox = document.createElement("div");
         bigscorebox.innerText = score + counter;
         bigparent.appendChild(bigrankbox);
-        bigparent.appendChild(bignamebox);
         bigparent.appendChild(bigscorebox);
+        bigparent.appendChild(bignamebox);
         firstbox.appendChild(bigparent);
       }
     }
