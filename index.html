@@ -8,6 +8,9 @@
   <title>得点表</title>
   <link rel="stylesheet" href="main.css" />
   <link rel="icon" href="icon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kaisei+Tokumin:wght@800&display=swap" rel="stylesheet">
 </head>
 
 <body>
@@ -27,6 +30,10 @@
     </div>
   </div>
   <div id="setting">設定</div>
+  <div id="cover" class="none"></div>
+  <video src="src/back.mp4" type="video/mp4" poster="src/back.png" id="backvideo" class="none" autoplay loop
+    muted></video>
+  <div id="first" class="none"></div>
   <script src="src/background.js"></script>
   <script src="src/scoreboard.js"></script>
 </body>

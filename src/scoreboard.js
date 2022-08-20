@@ -1,14 +1,21 @@
 let runkey;
-(function init() {
+(function init(closecounter = 0) {
   const key = Symbol();
   runkey = key;
-  let sock = new WebSocket("wss://cooperative-cliff-grenadilla.glitch.me");
+  let sock = new WebSocket("ws://127.0.0.1:3000");
+  // let sock = new WebSocket("wss://cooperative-cliff-grenadilla.glitch.me");
 
   function send(m) {
     if (sock != null && key === runkey) {
       sock.send(JSON.stringify(m));
     }
   }
+
+  const cover = document.getElementById("cover");
+
+  const backvideo = document.getElementById("backvideo");
+
+  const firstbox = document.getElementById("first");
 
   const category = document.getElementById("category");
 
@@ -20,8 +27,12 @@ let runkey;
 
   const board = {};
 
+  let display1st = false;
+
   let setting = {
     p: null,
+    er: false,
+    cl: false
   };
 
   function setcookie() {
@@ -29,7 +40,7 @@ let runkey;
       document.cookie =
         "meringue=" +
         encodeURIComponent(JSON.stringify(setting)) +
-        "; max-age=86400000";
+        "; max-age=432000";
     }
   }
 
@@ -42,6 +53,19 @@ let runkey;
       e.className = classname;
     }
     return e;
+  }
+
+  function crop(parent, ...op) {
+    op.forEach(opt => {
+      const e = document.createElement("option");
+      if (opt != null) {
+        e.value = opt;
+        e.innerText = opt;
+      }
+      if (parent != null) {
+        parent.appendChild(e);
+      }
+    });
   }
 
   function insertscore(rank, name, score, counter, id) {
@@ -58,11 +82,27 @@ let runkey;
       parent.appendChild(namebox);
       parent.appendChild(scorebox);
       rankingbox.appendChild(parent);
+      if (display1st && rank === 1) {
+        const bigparent = document.createElement('div');
+        firstbox.classList.remove('none');
+        backvideo.classList.remove('none');
+        const bigrankbox = document.createElement("div");
+        bigrankbox.innerText = category.value;
+        const bignamebox = document.createElement("div");
+        bignamebox.innerText = name;
+        const bigscorebox = document.createElement("div");
+        bigscorebox.innerText = score + counter;
+        bigparent.appendChild(bigrankbox);
+        bigparent.appendChild(bignamebox);
+        bigparent.appendChild(bigscorebox);
+        firstbox.appendChild(bigparent);
+      }
     }
   }
 
   function pass() {
     if (key === runkey) {
+      cover.classList.remove('none');
       const box = crel(null, "glass notice");
       const heading = crel("パスワードを入力してください", "heading");
       box.appendChild(heading);
@@ -88,6 +128,7 @@ let runkey;
           setting.p = passwordbox.value;
           setcookie();
           sock.close();
+          cover.classList.add('none');
         }
       }
       passwordbox.addEventListener("keydown", (e) => {
@@ -100,6 +141,7 @@ let runkey;
 
   function createboard() {
     if (key === runkey) {
+      cover.classList.remove('none');
       const box = crel(null, "glass notice");
       const heading = crel("カテゴリー名を入力してください", "heading");
       box.appendChild(heading);
@@ -136,6 +178,7 @@ let runkey;
               counter: counterbox.value,
             },
           });
+          cover.classList.add('none');
         } else if (boardnamebox.value === "") {
           boardnamebox.focus();
         }
@@ -143,6 +186,7 @@ let runkey;
       btn2.addEventListener("click", () => {
         p = false;
         box.remove();
+        cover.classList.add('none');
       });
       document.body.appendChild(box);
     }
@@ -150,9 +194,28 @@ let runkey;
 
   function pushscore() {
     if (key === runkey) {
+      cover.classList.remove('none');
       const box = crel(null, "glass notice");
       const heading = crel("新しい記録", "heading");
       box.appendChild(heading);
+      // const gradebox = document.createElement("input");
+      // gradebox.type = "number";
+      // gradebox.placeholder = "年";
+      // gradebox.setAttribute('list', 'gradelist');
+      // box.appendChild(gradebox);
+      // const gradelist = document.createElement("datalist");
+      // gradelist.id = 'gradelist';
+      // crop(gradelist, 1, 2, 3, 4, 5, 6);
+      // box.appendChild(gradelist);
+      // const classbox = document.createElement("input");
+      // classbox.type = "text";
+      // classbox.placeholder = "組";
+      // classbox.setAttribute('list', "classlist");
+      // box.appendChild(classbox);
+      // const classlist = document.createElement("datalist");
+      // classlist.id = 'classlist';
+      // crop(classlist, 'A', 'B', 'C', 'D', 'E');
+      // box.appendChild(classlist);
       const namebox = document.createElement("input");
       namebox.type = "text";
       namebox.placeholder = "名前を入力...";
@@ -182,6 +245,7 @@ let runkey;
               score: scorebox.value - 0,
             },
           });
+          cover.classList.add('none');
         } else if (typeof (scorebox.value - 0) !== "number") {
           scorebox.focus();
         }
@@ -189,6 +253,7 @@ let runkey;
       btn2.addEventListener("click", () => {
         p = false;
         box.remove();
+        cover.classList.add('none');
       });
       document.body.appendChild(box);
     }
@@ -196,6 +261,7 @@ let runkey;
 
   function changescore(id, name, score) {
     if (key === runkey) {
+      cover.classList.remove('none');
       const box = crel(null, "glass notice");
       const heading = crel("記録を変更", "heading");
       box.appendChild(heading);
@@ -235,6 +301,7 @@ let runkey;
               score: scorebox.value - 0,
             },
           });
+          cover.classList.add('none');
         } else if (typeof (scorebox.value - 0) !== "number") {
           scorebox.focus();
         }
@@ -242,6 +309,7 @@ let runkey;
       btn2.addEventListener("click", () => {
         p = false;
         box.remove();
+        cover.classList.add('none');
       });
       btn3.addEventListener("click", () => {
         p = false;
@@ -253,6 +321,7 @@ let runkey;
             id: id,
           },
         });
+        cover.classList.add('none');
       });
       document.body.appendChild(box);
     }
@@ -260,6 +329,7 @@ let runkey;
 
   function changesetting() {
     if (key === runkey) {
+      cover.classList.remove('none');
       const box = crel(null, "glass notice");
       const heading = crel("設定", "heading");
       box.appendChild(heading);
@@ -267,6 +337,28 @@ let runkey;
       btn.type = "button";
       btn.innerText = "パスワードを再設定";
       box.appendChild(btn);
+      const btn2 = document.createElement("button");
+      btn2.type = "button";
+      if (setting.er) {
+        btn2.innerText = "エラー通知を切る";
+      } else {
+        btn2.innerText = "エラーを通知";
+      }
+      box.appendChild(btn2);
+      const btn3 = document.createElement("button");
+      btn3.type = "button";
+      if (setting.cl) {
+        btn3.innerText = "2回まで通信切断時に再接続";
+      } else {
+        btn3.className = "redback";
+        btn3.innerText = "通信の切断を1回で通知";
+      }
+      box.appendChild(btn3);
+      const btn4 = document.createElement("button");
+      btn4.type = "button";
+      btn4.innerText = "1位のみ表示";
+      btn4.className = "greenback";
+      box.appendChild(btn4);
       const close = document.createElement("button");
       close.type = "button";
       close.innerText = "閉じる";
@@ -277,11 +369,47 @@ let runkey;
           p = false;
           box.remove();
           pass();
+          cover.classList.add('none');
+        }
+      });
+      btn2.addEventListener("click", () => {
+        if (p) {
+          p = false;
+          box.remove();
+          setting.er = !setting.er;
+          setcookie();
+          cover.classList.add('none');
+        }
+      });
+      btn3.addEventListener("click", () => {
+        if (p) {
+          p = false;
+          box.remove();
+          setting.cl = !setting.cl;
+          setcookie();
+          cover.classList.add('none');
+        }
+      });
+      btn4.addEventListener("click", () => {
+        if (p) {
+          p = false;
+          box.remove();
+          cover.classList.add('none');
+          if (category.value !== 'top') {
+            display1st = true;
+            send({
+              type: "getboard",
+              data: {
+                boardname: category.value,
+              },
+            });
+          }
         }
       });
       close.addEventListener("click", () => {
         p = false;
         box.remove();
+        cover.classList.add('none');
       });
       document.body.appendChild(box);
     }
@@ -289,6 +417,7 @@ let runkey;
 
   function warndelete(m) {
     if (key === runkey) {
+      cover.classList.remove('none');
       const box = crel(null, "glass notice");
       const heading = crel("警告", "heading warn");
       box.appendChild(heading);
@@ -311,11 +440,13 @@ let runkey;
           p = false;
           box.remove();
           send(m);
+          cover.classList.add('none');
         }
       });
       close.addEventListener("click", () => {
         p = false;
         box.remove();
+        cover.classList.add('none');
       });
       document.body.appendChild(box);
     }
@@ -386,6 +517,12 @@ let runkey;
     }
   });
 
+  firstbox.addEventListener('click', () => {
+    display1st = false;
+    firstbox.classList.add('none');
+    backvideo.classList.add('none');
+  });
+
   sock.addEventListener("open", () => {
     if (key === runkey) {
       if (running != null || running === null) {
@@ -397,6 +534,7 @@ let runkey;
         const c = decodeURIComponent(e);
         if (c.match(/^meringue=/)) {
           setting = JSON.parse(c.replace(/^meringue=/g, ""));
+          setcookie();
         }
       });
       if (setting.p === null) {
@@ -445,10 +583,11 @@ let runkey;
             m.data.date +
             "時点で記録表を見ている人数: " +
             m.data.viewers +
-            "</span></p><hr><p>本日はお越しくださりありがとうございます。</p><p>ページ上部の「得点表を選択」の隣にある四角を押して、記録が見たい種目を選択してください！</p>";
+            "</span></p><hr><p>本日はお越しくださりありがとうございます。</p><p>ページ上部にある「種目を選択」の枠から、記録が見たい種目を選択してください！</p>";
           break;
         }
         case "getboard": {
+          firstbox.innerHTML = '';
           rankingbox.innerHTML = "<hr>";
           board[m.data.boardname] = m.data;
           let rankdata = {
@@ -472,6 +611,7 @@ let runkey;
           break;
         }
         case "newscore": {
+          firstbox.innerHTML = '';
           rankingbox.innerHTML = "<hr>";
           board[m.data.boardname].score.push(m.data);
           board[m.data.boardname].score.sort(function (a, b) {
@@ -548,11 +688,35 @@ let runkey;
       running = false;
     }
     console.log("[CLOSED]ご利用ありがとうございました。");
-    notice("通信が切断されました", init);
+    closecounter++;
+    if (closecounter > 2 || setting.cl) {
+      notice("通信が切断されました", () => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', 'https://spiffy-tough-megaraptor.glitch.me/', true);
+        xhr.setRequestHeader('content-type', 'application/x-www-form-urlencoded;charset=UTF-8');
+
+        const request = encodeURIComponent("msg=websocket closed and button clicked, closecounter:" + closecounter);
+        xhr.send(request);
+        const reloaddiv = crel('再読み込み', 'reload');
+        reloaddiv.addEventListener('click', () => location.reload());
+        rankingbox.appendChild(reloaddiv);
+      });
+    } else {
+      init(closecounter);
+    }
   });
 
   sock.addEventListener("error", () => {
     console.log("[ERROE!]えらーなり");
-    notice("エラーが発生しました");
+    if (setting.er) {
+      notice("エラーが発生しました", () => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', 'https://spiffy-tough-megaraptor.glitch.me/', true);
+        xhr.setRequestHeader('content-type', 'application/x-www-form-urlencoded;charset=UTF-8');
+
+        const request = encodeURIComponent("msg=error at websocket and button clicked, closecounter:" + closecounter);
+        xhr.send(request);
+      });
+    }
   });
 })();

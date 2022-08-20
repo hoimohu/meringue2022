@@ -41,14 +41,16 @@ function boardsort(boardname) {
 
 const db = new Database({ filename: "database.db" });
 
-db.loadDatabase((error) => {
-    if (error !== null) {
-        console.error(error);
+db.loadDatabase((err) => {
+    if (err != null) {
+        console.error(err);
     }
     console.log("database has loaded.");
 
-    db.find({}, (error, docs) => {
-        console.error(error);
+    db.find({}, (err, docs) => {
+        if (err != null) {
+            console.error(err);
+        }
         docs.forEach((e) => {
             if (e.type === "board") {
                 board[e.boardname] = e;
@@ -76,11 +78,15 @@ const server = http.createServer(function (req, res) {
         req
             .on("data", (chunk) => {
                 if (chunk != null) {
-                    data += chunk.toString();
+                    data += chunk;
+                }
+                if (data.length > 1024) {
+                    res.writeHead(413);
+                    res.end('送信データのサイズは1024B以内にしてください');
                 }
             })
             .on("end", () => {
-                const postdata = JSON.parse(decodeURIComponent(data));
+                const postdata = JSON.parse(decodeURIComponent(data.toString()));
                 if (postdata.boardname != null && postdata.name != null && postdata.score != null) {
                     console.log(postdata);
                     pushscore(postdata.boardname, postdata.name, postdata.score - 0);
@@ -167,11 +173,15 @@ function deleteboard(boardname) {
             { type: "score", boardname: boardname },
             { multi: true },
             function (err) {
-                console.log("[ERROR@deleteboard:s]", err);
+                if (err != null) {
+                    console.log("[ERROR@deleteboard:s]", err);
+                }
             }
         );
         db.remove({ type: "board", boardname: boardname }, {}, function (err) {
-            console.log("[ERROR@deleteboard:b]", err);
+            if (err != null) {
+                console.log("[ERROR@deleteboard:b]", err);
+            }
         });
         broadcast({
             type: "deleteboard",
@@ -190,7 +200,9 @@ function deletescore(boardname, id) {
             { type: "score", boardname: boardname, id: id },
             {},
             function (err) {
-                console.log("[ERROR@deletescore]", err);
+                if (err != null) {
+                    console.log("[ERROR@deletescore]", err);
+                }
             }
         );
         board[boardname].score = board[boardname].score.filter(
@@ -221,7 +233,9 @@ function changescore(boardname, id, name, score) {
                     board[boardname].score[i],
                     {},
                     (err) => {
-                        console.log("[ERROR@changescore]", err);
+                        if (err != null) {
+                            console.log("[ERROR@changescore]", err);
+                        }
                     }
                 );
             }
@@ -461,6 +475,7 @@ function getNowDate() {
 const allowedOrigins = [
     "https://koero-3anokabeiii.glitch.me",
     "https://hoimohu.github.io",
+    "http://127.0.0.1:8887"
 ];
 
 server.on("upgrade", function (request, socket, head) {
