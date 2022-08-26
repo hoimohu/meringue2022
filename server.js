@@ -85,7 +85,7 @@ db.loadDatabase((err) => {
         });
         Object.keys(board).forEach((e) => {
             if (board[e].score != null) {
-                if (board[e].sort != null) {
+                if (board[e].sort == null) {
                     board[e].sort = "up";
                 }
                 boardsort(e);
@@ -305,6 +305,24 @@ function changesort(boardname) {
             board[boardname].sort = "up";
         }
         boardsort(boardname);
+        db.update(
+            { type: "board", boardname: boardname },
+            {
+                type: "board",
+                counter: board[boardname].counter,
+                boardname: boardname,
+                score: [],
+                people: [],
+                date: board[boardname].date,
+                sort: board[boardname].sort
+            },
+            {},
+            (err) => {
+                if (err != null) {
+                    console.log("[ERROR@changesort]", err);
+                }
+            }
+        );
         topchange();
         board[boardname].people.forEach((person) =>
             person({
@@ -455,26 +473,28 @@ sock.on("connection", (ws) => {
                         (person) => person !== send
                     );
                 }
-                if (Object.prototype.hasOwnProperty.call(board, "top")) {
-                    board.top.people.push(send);
-                    const viewers = sock.clients.size;
-                    const senddata = {
-                        type: "top",
-                        data: {
-                            viewers: viewers,
-                            date: getNowDate(),
-                            score: {},
-                            board: Object.keys(board).filter(v => v !== 'top')
-                        },
-                    };
-                    Object.keys(board).forEach(e => {
-                        if (e !== 'top') {
-                            senddata.data.score[e] = board[e].score[0];
-                            senddata.data.score[e].counter = board[e].counter;
-                        }
-                    });
-                    nowboard = 'top';
-                    send(senddata);
+                if (perm > 1) {
+                    if (Object.prototype.hasOwnProperty.call(board, "top")) {
+                        board.top.people.push(send);
+                        const viewers = sock.clients.size;
+                        const senddata = {
+                            type: "top",
+                            data: {
+                                viewers: viewers,
+                                date: getNowDate(),
+                                score: {},
+                                board: Object.keys(board).filter(v => v !== 'top')
+                            },
+                        };
+                        Object.keys(board).forEach(e => {
+                            if (e !== 'top') {
+                                senddata.data.score[e] = board[e].score[0];
+                                senddata.data.score[e].counter = board[e].counter;
+                            }
+                        });
+                        nowboard = 'top';
+                        send(senddata);
+                    }
                 }
             }
         }
