@@ -2,12 +2,34 @@ const http = require("http");
 const WebSocket = require("ws");
 const Database = require("nedb");
 
+const sock = new WebSocket.Server({ noServer: true });
+
 const board = {
     top: {
         people: [],
         date: getNowDate(),
     },
 };
+
+function topchange() {
+    const viewers = sock.clients.size;
+    const senddata = {
+        type: "top",
+        data: {
+            viewers: viewers,
+            date: getNowDate(),
+            score: {},
+            board: Object.keys(board).filter(v => v !== 'top')
+        },
+    };
+    Object.keys(board).forEach(e => {
+        if (e !== 'top') {
+            senddata.data.score[e] = board[e].score[0];
+            senddata.data.score[e].counter = board[e].counter;
+        }
+    });
+    board.top.people.forEach(e => e(senddata));
+}
 
 function boardsort(boardname) {
     if (boardname !== "top") {
@@ -82,12 +104,16 @@ const server = http.createServer(function (req, res) {
                 }
                 if (data.length > 1024) {
                     res.writeHead(413);
-                    res.end('送信データのサイズは1024B以内にしてください');
+                    res.end("送信データのサイズは1024B以内にしてください");
                 }
             })
             .on("end", () => {
                 const postdata = JSON.parse(decodeURIComponent(data.toString()));
-                if (postdata.boardname != null && postdata.name != null && postdata.score != null) {
+                if (
+                    postdata.boardname != null &&
+                    postdata.name != null &&
+                    postdata.score != null
+                ) {
                     console.log(postdata);
                     pushscore(postdata.boardname, postdata.name, postdata.score - 0);
                 } else {
@@ -97,8 +123,6 @@ const server = http.createServer(function (req, res) {
     }
     res.end("ok");
 });
-
-const sock = new WebSocket.Server({ noServer: true });
 
 function broadcast(m) {
     sock.clients.forEach((person) => person.send(JSON.stringify(m)));
@@ -144,12 +168,12 @@ function pushscore(boardname, name, score) {
             score: score,
             date: getNowDate(),
             latest: Date.now(),
-            id: symbolnum++,
+            id: Date.now() + "" + symbolnum++ - 0,
             boardname: boardname,
         };
-        db.insert(pushdata, (error) => {
-            if (error !== null) {
-                console.error("[ERROR@pushscore]", error);
+        db.insert(pushdata, (err) => {
+            if (err !== null) {
+                console.error("[ERROR@pushscore]", err);
             }
         });
         board[boardname].score.push(pushdata);
@@ -157,6 +181,9 @@ function pushscore(boardname, name, score) {
             board[boardname].sort = "up";
         }
         boardsort(boardname);
+        if (pushdata.id === board[boardname].score[0].id) {
+            topchange();
+        }
         board[boardname].people.forEach((person) =>
             person({
                 type: "newscore",
@@ -190,6 +217,7 @@ function deleteboard(boardname) {
                 boardname: boardname,
             },
         });
+        topchange();
         delete board[boardname];
     }
 }
@@ -200,23 +228,32 @@ function deletescore(boardname, id) {
             { type: "score", boardname: boardname, id: id },
             {},
             function (err) {
+                let deletedscore;
                 if (err != null) {
                     console.log("[ERROR@deletescore]", err);
                 }
+                board[boardname].score.forEach(s => {
+                    if (s.id === id) {
+                        deletedscore = s.score;
+                    }
+                });
+                board[boardname].score = board[boardname].score.filter(
+                    (score) => score.id !== id
+                );
+                board[boardname].people.forEach((person) =>
+                    person({
+                        type: "getboard",
+                        data: {
+                            boardname: boardname,
+                            score: board[boardname].score,
+                            counter: board[boardname].counter,
+                        },
+                    })
+                );
+                if (deletedscore > board[boardname].score[0].score) {
+                    topchange();
+                }
             }
-        );
-        board[boardname].score = board[boardname].score.filter(
-            (score) => score.id !== id
-        );
-        board[boardname].people.forEach((person) =>
-            person({
-                type: "getboard",
-                data: {
-                    boardname: boardname,
-                    score: board[boardname].score,
-                    counter: board[boardname].counter,
-                },
-            })
         );
     }
 }
@@ -244,6 +281,9 @@ function changescore(boardname, id, name, score) {
             board[boardname].sort = "up";
         }
         boardsort(boardname);
+        if (id === board[boardname].score[0].id) {
+            topchange();
+        }
         board[boardname].people.forEach((person) =>
             person({
                 type: "getboard",
@@ -265,6 +305,7 @@ function changesort(boardname) {
             board[boardname].sort = "up";
         }
         boardsort(boardname);
+        topchange();
         board[boardname].people.forEach((person) =>
             person({
                 type: "getboard",
@@ -313,40 +354,49 @@ sock.on("connection", (ws) => {
                         );
                     }
                     if (Object.prototype.hasOwnProperty.call(board, "top")) {
-                        board.top.people.push(send);
                         const viewers = sock.clients.size;
                         board.top.people.push(send);
-                        send({
+                        const senddata = {
                             type: "top",
                             data: {
                                 viewers: viewers,
                                 date: getNowDate(),
-                                board: Object.keys(board),
+                                score: {},
+                                board: Object.keys(board).filter(v => v !== 'top')
                             },
+                        };
+                        Object.keys(board).forEach(e => {
+                            if (e !== 'top') {
+                                senddata.data.score[e] = board[e].score[0];
+                                senddata.data.score[e].counter = board[e].counter;
+                            }
                         });
                         nowboard = "top";
+                        send(senddata);
                     }
                     break;
                 case "getboard":
-                    if (
-                        nowboard != null &&
-                        Object.prototype.hasOwnProperty.call(board, nowboard)
-                    ) {
-                        board[nowboard].people = board[nowboard].people.filter(
-                            (person) => person !== send
-                        );
-                    }
-                    if (Object.prototype.hasOwnProperty.call(board, m.data.boardname)) {
-                        board[m.data.boardname].people.push(send);
-                        nowboard = m.data.boardname;
-                        send({
-                            type: "getboard",
-                            data: {
-                                boardname: m.data.boardname,
-                                score: board[m.data.boardname].score,
-                                counter: board[m.data.boardname].counter,
-                            },
-                        });
+                    if (m.data.boardname !== 'top') {
+                        if (
+                            nowboard != null &&
+                            Object.prototype.hasOwnProperty.call(board, nowboard)
+                        ) {
+                            board[nowboard].people = board[nowboard].people.filter(
+                                (person) => person !== send
+                            );
+                        }
+                        if (Object.prototype.hasOwnProperty.call(board, m.data.boardname)) {
+                            board[m.data.boardname].people.push(send);
+                            nowboard = m.data.boardname;
+                            send({
+                                type: "getboard",
+                                data: {
+                                    boardname: m.data.boardname,
+                                    score: board[m.data.boardname].score,
+                                    counter: board[m.data.boardname].counter,
+                                },
+                            });
+                        }
                     }
                     break;
             }
@@ -408,14 +458,23 @@ sock.on("connection", (ws) => {
                 if (Object.prototype.hasOwnProperty.call(board, "top")) {
                     board.top.people.push(send);
                     const viewers = sock.clients.size;
-                    send({
+                    const senddata = {
                         type: "top",
                         data: {
                             viewers: viewers,
                             date: getNowDate(),
-                            board: Object.keys(board),
+                            score: {},
+                            board: Object.keys(board).filter(v => v !== 'top')
                         },
+                    };
+                    Object.keys(board).forEach(e => {
+                        if (e !== 'top') {
+                            senddata.data.score[e] = board[e].score[0];
+                            senddata.data.score[e].counter = board[e].counter;
+                        }
                     });
+                    nowboard = 'top';
+                    send(senddata);
                 }
             }
         }

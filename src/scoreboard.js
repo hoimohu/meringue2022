@@ -2,8 +2,8 @@ let runkey;
 (function init(closecounter = 0) {
   const key = Symbol();
   runkey = key;
-  // let sock = new WebSocket("ws://127.0.0.1:3000");
-  let sock = new WebSocket("wss://cooperative-cliff-grenadilla.glitch.me");
+  let sock = new WebSocket("ws://127.0.0.1:3000");
+  // let sock = new WebSocket("wss://cooperative-cliff-grenadilla.glitch.me");
 
   function send(m) {
     if (sock != null && key === runkey) {
@@ -68,11 +68,14 @@ let runkey;
     });
   }
 
-  function insertscore(rank, name, score, counter, id) {
+  function insertscore(rank, name, score, counter, id, index) {
     if (key === runkey) {
       const parent = document.createElement("div");
       const rankbox = document.createElement("div");
       rankbox.innerText = rank;
+      if (index === -1) {
+        rankbox.classList.add('topmember');
+      }
       rankbox.addEventListener("click", () => changescore(id, name, score));
       const namebox = document.createElement("div");
       namebox.innerText = name;
@@ -82,14 +85,14 @@ let runkey;
       parent.appendChild(namebox);
       parent.appendChild(scorebox);
       rankingbox.appendChild(parent);
-      if (display1st && rank === 1) {
+      if (display1st && rank === 1 && index === 0) {
         const bigparent = document.createElement('div');
         firstbox.classList.remove('none');
         backvideo.classList.remove('none');
         const bignamebox = document.createElement("div");
-        bignamebox.innerText = name;
+        bignamebox.innerText = 'ᅠ';
         const bigrankbox = document.createElement("div");
-        bigrankbox.innerText = category.value;
+        bigrankbox.innerText = category.value + '最高記録';
         const bigscorebox = document.createElement("div");
         bigscorebox.innerText = score + counter;
         bigparent.appendChild(bigrankbox);
@@ -198,24 +201,7 @@ let runkey;
       const box = crel(null, "glass notice");
       const heading = crel("新しい記録", "heading");
       box.appendChild(heading);
-      // const gradebox = document.createElement("input");
-      // gradebox.type = "number";
-      // gradebox.placeholder = "年";
-      // gradebox.setAttribute('list', 'gradelist');
-      // box.appendChild(gradebox);
-      // const gradelist = document.createElement("datalist");
-      // gradelist.id = 'gradelist';
-      // crop(gradelist, 1, 2, 3, 4, 5, 6);
-      // box.appendChild(gradelist);
-      // const classbox = document.createElement("input");
-      // classbox.type = "text";
-      // classbox.placeholder = "組";
-      // classbox.setAttribute('list', "classlist");
-      // box.appendChild(classbox);
-      // const classlist = document.createElement("datalist");
-      // classlist.id = 'classlist';
-      // crop(classlist, 'A', 'B', 'C', 'D', 'E');
-      // box.appendChild(classlist);
+
       const namebox = document.createElement("input");
       namebox.type = "text";
       namebox.placeholder = "名前を入力...";
@@ -356,7 +342,7 @@ let runkey;
       box.appendChild(btn3);
       const btn4 = document.createElement("button");
       btn4.type = "button";
-      btn4.innerText = "1位のみ表示";
+      btn4.innerText = "現在の種目の1位のみ表示";
       btn4.className = "greenback";
       box.appendChild(btn4);
       const close = document.createElement("button");
@@ -569,6 +555,7 @@ let runkey;
       const m = JSON.parse(e.data);
       switch (m.type) {
         case "top": {
+          firstbox.innerHTML = '';
           category.innerHTML = '<option value="top" selected>トップ</option>';
           m.data.board.forEach((e) => {
             if (e !== "top") {
@@ -583,7 +570,13 @@ let runkey;
             m.data.date +
             "時点で記録表を見ている人数: " +
             m.data.viewers +
-            "</span></p><hr><p>本日はお越しくださりありがとうございます。</p><p>ページ上部にある「種目を選択」の枠から、記録が見たい種目を選択してください！</p>";
+            "</span></p><hr><p>本日はお越しくださりありがとうございます。</p><p>ページ上部にある「種目を選択」の横の枠から、記録が見たい種目を選択してください。</p><hr>";
+          m.data.board.forEach(bn => {
+            if (bn !== 'top') {
+              const s = m.data.score[bn];
+              insertscore(bn, s.name, s.score, s.counter, s.id, -1);
+            }
+          });
           break;
         }
         case "getboard": {
@@ -599,7 +592,7 @@ let runkey;
               rankdata.beforescore = s.score;
               rankdata.rank = i + 1;
             }
-            insertscore(rankdata.rank, s.name, s.score, m.data.counter, s.id);
+            insertscore(rankdata.rank, s.name, s.score, m.data.counter, s.id, i);
           });
           break;
         }
@@ -639,7 +632,8 @@ let runkey;
               s.name,
               s.score,
               board[m.data.boardname].counter,
-              s.id
+              s.id,
+              i
             );
           });
           break;
@@ -697,9 +691,7 @@ let runkey;
 
         const request = encodeURIComponent("msg=websocket closed and button clicked, closecounter:" + closecounter);
         xhr.send(request);
-        const reloaddiv = crel('再読み込み', 'reload');
-        reloaddiv.addEventListener('click', () => location.reload());
-        rankingbox.appendChild(reloaddiv);
+        location.reload();
       });
     } else {
       init(closecounter);
