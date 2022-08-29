@@ -246,6 +246,7 @@ function deletescore(boardname, id) {
                         data: {
                             boardname: boardname,
                             score: board[boardname].score,
+                            sort: board[boardname].sort,
                             counter: board[boardname].counter,
                         },
                     })
@@ -290,6 +291,7 @@ function changescore(boardname, id, name, score) {
                 data: {
                     boardname: boardname,
                     score: board[boardname].score,
+                    sort: board[boardname].sort,
                     counter: board[boardname].counter,
                 },
             })
@@ -330,6 +332,7 @@ function changesort(boardname) {
                 data: {
                     boardname: boardname,
                     score: board[boardname].score,
+                    sort: board[boardname].sort,
                     counter: board[boardname].counter,
                 },
             })
@@ -411,6 +414,7 @@ sock.on("connection", (ws) => {
                                 data: {
                                     boardname: m.data.boardname,
                                     score: board[m.data.boardname].score,
+                                    sort: board[m.data.boardname].sort,
                                     counter: board[m.data.boardname].counter,
                                 },
                             });

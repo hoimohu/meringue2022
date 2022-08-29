@@ -85,16 +85,23 @@ let runkey;
       parent.appendChild(namebox);
       parent.appendChild(scorebox);
       rankingbox.appendChild(parent);
-      if (display1st && rank === 1 && index === 0) {
+      if (display1st && index < 1) {
         const bigparent = document.createElement('div');
         firstbox.classList.remove('none');
         backvideo.classList.remove('none');
         const bignamebox = document.createElement("div");
         bignamebox.innerText = 'ᅠ';
         const bigrankbox = document.createElement("div");
-        bigrankbox.innerText = category.value + '最高記録';
+        if (index === -1) {
+          bigrankbox.innerText = rank + '最高記録';
+        } else {
+          bigrankbox.innerText = category.value + '最高記録';
+        }
         const bigscorebox = document.createElement("div");
         bigscorebox.innerText = score + counter;
+        if (index === -1) {
+          bigscorebox.classList.add('dsptopscores');
+        }
         bigparent.appendChild(bigrankbox);
         bigparent.appendChild(bigscorebox);
         bigparent.appendChild(bignamebox);
@@ -389,6 +396,11 @@ let runkey;
                 boardname: category.value,
               },
             });
+          } else {
+            display1st = true;
+            send({
+              type: "top"
+            });
           }
         }
       });
@@ -570,7 +582,7 @@ let runkey;
             m.data.date +
             "時点で記録表を見ている人数: " +
             m.data.viewers +
-            "</span></p><hr><p>本日はお越しくださりありがとうございます。</p><p>ページ上部にある「種目を選択」の横の枠から、記録が見たい種目を選択してください。</p><hr>";
+            "</span></p><hr><p>本日はお越しくださりありがとうございます。</p><p>ページ上部にある「種目を選択」の横の枠から、記録が見たい種目を選択してください。</p><hr><h2>現在の最高記録</h2>";
           m.data.board.forEach(bn => {
             if (bn !== 'top') {
               const s = m.data.score[bn];
@@ -607,17 +619,32 @@ let runkey;
           firstbox.innerHTML = '';
           rankingbox.innerHTML = "<hr>";
           board[m.data.boardname].score.push(m.data);
-          board[m.data.boardname].score.sort(function (a, b) {
-            let x = a.score - 0;
-            let y = b.score - 0;
-            if (x > y) {
-              return -1;
-            }
-            if (x < y) {
-              return 1;
-            }
-            return 0;
-          });
+
+          if (board[m.data.boardname].sort === 'down') {
+            board[m.data.boardname].score.sort(function (a, b) {
+              let x = a.score - 0;
+              let y = b.score - 0;
+              if (x < y) {
+                return -1;
+              }
+              if (x > y) {
+                return 1;
+              }
+              return 0;
+            });
+          } else {
+            board[m.data.boardname].score.sort(function (a, b) {
+              let x = a.score - 0;
+              let y = b.score - 0;
+              if (x > y) {
+                return -1;
+              }
+              if (x < y) {
+                return 1;
+              }
+              return 0;
+            });
+          }
           let rankdata = {
             rank: 0,
             beforescore: null,
