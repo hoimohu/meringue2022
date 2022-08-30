@@ -291,3 +291,47 @@ select {
 .dsptopscores {
   font-size: 12vh !important;
 }
+
+.dsptopranks {
+  font-size: 6vh !important;
+}
+
+.fireworks {
+  background-image: url("src/fireworks.gif");
+}
+
+.fireworks>div {
+  border-bottom: 5px black dotted;
+  border-radius: 4px;
+}
+
+.congravideo {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: black;
+  z-index: 5;
+}
+
+.congrabox {
+  position: fixed;
+  top: calc(100vh - 3em);
+  left: 0;
+  -webkit-text-stroke: orange 0.5vh;
+  color: white;
+  font-size: 10vh;
+  z-index: 6;
+}
+
+.congraname {
+  display: flex;
+  justify-content: space-around;
+  width: 100vw;
+  height: 3em;
+}
+
+.congraname>div {
+  font-family: 'Kaisei Tokumin', serif !important;
+}

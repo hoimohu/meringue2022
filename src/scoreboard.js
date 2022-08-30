@@ -28,11 +28,16 @@ let runkey;
   const board = {};
 
   let display1st = false;
+  let displaycongra = false;
 
   let setting = {
     p: null,
     er: false,
     cl: false
+  };
+
+  const nowtop = {
+    top: false
   };
 
   function setcookie() {
@@ -68,6 +73,44 @@ let runkey;
     });
   }
 
+  function congra(scores) {
+    if (scores.length !== 0) {
+      if (displaycongra === false) {
+        const congrabox = document.createElement('div');
+        const video = document.createElement('video');
+        const namebox = document.createElement('div');
+        namebox.classList.add('congraname');
+        displaycongra = namebox;
+        video.src = 'src/congra.mp4';
+        video.classList.add('congravideo');
+        video.addEventListener('ended', () => {
+          video.pause();
+          video.remove();
+          congrabox.remove();
+          displaycongra = false;
+        });
+        document.body.appendChild(video);
+        video.addEventListener('canplay', () => {
+          congrabox.classList.add('congrabox');
+          scores.forEach(e => {
+            const element = document.createElement('div');
+            element.innerText = e.bn + '　' + e.score + e.counter;
+            namebox.appendChild(element);
+          });
+          congrabox.appendChild(namebox);
+          document.body.appendChild(congrabox);
+          video.play();
+        });
+      } else {
+        scores.forEach(e => {
+          const element = document.createElement('div');
+          element.innerText = e.bn + '　' + e.score + e.counter;
+          displaycongra.appendChild(element);
+        });
+      }
+    }
+  }
+
   function insertscore(rank, name, score, counter, id, index) {
     if (key === runkey) {
       const parent = document.createElement("div");
@@ -88,23 +131,24 @@ let runkey;
       if (display1st && index < 1) {
         const bigparent = document.createElement('div');
         firstbox.classList.remove('none');
-        backvideo.classList.remove('none');
-        const bignamebox = document.createElement("div");
-        bignamebox.innerText = 'ᅠ';
         const bigrankbox = document.createElement("div");
-        if (index === -1) {
-          bigrankbox.innerText = rank + '最高記録';
-        } else {
-          bigrankbox.innerText = category.value + '最高記録';
-        }
         const bigscorebox = document.createElement("div");
         bigscorebox.innerText = score + counter;
-        if (index === -1) {
-          bigscorebox.classList.add('dsptopscores');
-        }
         bigparent.appendChild(bigrankbox);
         bigparent.appendChild(bigscorebox);
-        bigparent.appendChild(bignamebox);
+        if (index === -1) {
+          bigrankbox.innerText = rank + '最高記録';
+          bigrankbox.classList.add('dsptopranks');
+          bigscorebox.classList.add('dsptopscores');
+          firstbox.classList.add('fireworks');
+        } else {
+          backvideo.classList.remove('none');
+          bigrankbox.innerText = category.value + '最高記録';
+          firstbox.classList.remove('fireworks');
+          const bignamebox = document.createElement("div");
+          bignamebox.innerText = 'ᅠ';
+          bigparent.appendChild(bignamebox);
+        }
         firstbox.appendChild(bigparent);
       }
     }
@@ -582,13 +626,23 @@ let runkey;
             m.data.date +
             "時点で記録表を見ている人数: " +
             m.data.viewers +
-            "</span></p><hr><p>本日はお越しくださりありがとうございます。</p><p>ページ上部にある「種目を選択」の横の枠から、記録が見たい種目を選択してください。</p><hr><h2>現在の最高記録</h2>";
+            "</span></p><hr><p>本日はお越しくださりありがとうございます。</p><p>ページ左上にある「種目を選択」の横の枠から、記録が見たい種目を選択してください。</p><hr><h2>現在の最高記録</h2>";
+          const congralist = [];
           m.data.board.forEach(bn => {
             if (bn !== 'top') {
               const s = m.data.score[bn];
+              if (nowtop[bn] != null) {
+                if (nowtop[bn] !== s.id) {
+                  congralist.push({ bn: bn, score: s.score, counter: s.counter });
+                }
+              }
+              nowtop[bn] = s.id;
               insertscore(bn, s.name, s.score, s.counter, s.id, -1);
             }
           });
+          if (display1st === true) {
+            congra(congralist);
+          }
           break;
         }
         case "getboard": {
