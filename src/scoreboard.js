@@ -118,8 +118,10 @@ let runkey;
       rankbox.innerText = rank;
       if (index === -1) {
         rankbox.classList.add('topmember');
+        rankbox.addEventListener("click", () => changescore(id, name, score, rank));
+      } else {
+        rankbox.addEventListener("click", () => changescore(id, name, score, category.value));
       }
-      rankbox.addEventListener("click", () => changescore(id, name, score));
       const namebox = document.createElement("div");
       namebox.innerText = name;
       const scorebox = document.createElement("div");
@@ -296,7 +298,7 @@ let runkey;
     }
   }
 
-  function changescore(id, name, score) {
+  function changescore(id, name, score, bn) {
     if (key === runkey) {
       cover.classList.remove('none');
       const box = crel(null, "glass notice");
@@ -332,7 +334,7 @@ let runkey;
           send({
             type: "changescore",
             data: {
-              boardname: category.value,
+              boardname: bn,
               id: id,
               name: namebox.value,
               score: scorebox.value - 0,
@@ -354,7 +356,7 @@ let runkey;
         send({
           type: "deletescore",
           data: {
-            boardname: category.value,
+            boardname: bn,
             id: id,
           },
         });
