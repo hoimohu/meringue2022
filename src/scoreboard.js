@@ -2,8 +2,8 @@ let runkey;
 (function init(closecounter = 0) {
   const key = Symbol();
   runkey = key;
-  // let sock = new WebSocket("ws://127.0.0.1:3000");
-  let sock = new WebSocket("wss://cooperative-cliff-grenadilla.glitch.me");
+  let sock = new WebSocket("ws://127.0.0.1:3000");
+  // let sock = new WebSocket("wss://cooperative-cliff-grenadilla.glitch.me");
 
   function send(m) {
     if (sock != null && key === runkey) {
@@ -30,10 +30,13 @@ let runkey;
   let display1st = false;
   let displaycongra = false;
 
+  let bch = null;
+
   let setting = {
     p: null,
     er: false,
-    cl: false
+    cl: false,
+    uid: Date.now().toString(16) + Math.random().toString(16)
   };
 
   const nowtop = {
@@ -75,6 +78,9 @@ let runkey;
 
   function congra(scores) {
     if (scores.length !== 0) {
+      if (bch != null) {
+        bch.postMessage('congra');
+      }
       if (displaycongra === false) {
         const congrabox = document.createElement('div');
         const video = document.createElement('video');
@@ -88,6 +94,9 @@ let runkey;
           video.remove();
           congrabox.remove();
           displaycongra = false;
+          if (bch != null) {
+            bch.postMessage('congraout');
+          }
         });
         document.body.appendChild(video);
         video.addEventListener('canplay', () => {
@@ -167,7 +176,7 @@ let runkey;
       passwordbox.placeholder = "パスワードを入力...";
       box.appendChild(passwordbox);
       const note = crel(
-        "指定されたパスワードを入力してください。パスワードが間違っていた場合も次に進むことができますが、データを閲覧することはできません。",
+        "指定されたパスワードを入力してください。パスワードが間違っていた場合も次に進むことができますが、データを閲覧することはできません。\nまた、このサイトではcookieを利用しています。cookieを有効にしないと記録が見えない場合があります。",
         "note"
       );
       box.appendChild(note);
@@ -578,6 +587,9 @@ let runkey;
         const c = decodeURIComponent(e);
         if (c.match(/^meringue=/)) {
           setting = JSON.parse(c.replace(/^meringue=/g, ""));
+          if (setting.uid == null) {
+            setting.uid = Date.now().toString(16) + Math.random().toString(16);
+          }
           setcookie();
         }
       });
@@ -628,7 +640,19 @@ let runkey;
             m.data.date +
             "時点で記録表を見ている人数: " +
             m.data.viewers +
-            "</span></p><hr><p>本日はお越しくださりありがとうございます。</p><p>ページ左上にある「種目を選択」の横の枠から、記録が見たい種目を選択してください。</p><hr><h2>現在の最高記録</h2>";
+            "</span></p><hr><p>本日はお越しくださりありがとうございます。</p><p>ページ左上にある「種目を選択」の横の枠から、記録が見たい種目を選択してください。</p><hr>";
+          const h2 = document.createElement('h2');
+          h2.innerText = '現在の最高記録';
+          let h2counter = 0;
+          h2.addEventListener('click', () => {
+            if (h2counter > 9 && bch == null) {
+              bch = new BroadcastChannel('3a');
+              h2.classList.add('warn');
+            } else if (h2counter < 10) {
+              h2counter++;
+            }
+          });
+          rankingbox.appendChild(h2);
           const congralist = [];
           m.data.board.forEach(bn => {
             if (bn !== 'top') {
@@ -772,11 +796,14 @@ let runkey;
         xhr.open('POST', 'https://spiffy-tough-megaraptor.glitch.me/', true);
         xhr.setRequestHeader('content-type', 'application/x-www-form-urlencoded;charset=UTF-8');
 
-        const request = encodeURIComponent("msg=websocket closed and button clicked, closecounter:" + closecounter);
+        const request = encodeURIComponent("msg=wsclosedbtn,cc" + closecounter + ',uid:' + uid);
         xhr.send(request);
         location.reload();
       });
     } else {
+      if (bch != null) {
+        bch.close();
+      }
       init(closecounter);
     }
   });
@@ -789,7 +816,7 @@ let runkey;
         xhr.open('POST', 'https://spiffy-tough-megaraptor.glitch.me/', true);
         xhr.setRequestHeader('content-type', 'application/x-www-form-urlencoded;charset=UTF-8');
 
-        const request = encodeURIComponent("msg=error at websocket and button clicked, closecounter:" + closecounter);
+        const request = encodeURIComponent("msg=wserrmsgbtn,cc:" + closecounter + ',uid:' + uid);
         xhr.send(request);
       });
     }

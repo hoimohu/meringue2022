@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>びーじーえむ</title>
+</head>
+
+<body>
+    <!-- 1. The <iframe> (and video player) will replace this <div> tag. -->
+    <div id="player">
+        <div id="video"></div>
+    </div>
+    <div>
+        <button id="startbutton" type="button">BGMすたーと</button>
+    </div>
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <script>
+        //yt start
+        document.getElementById('startbutton').addEventListener('click', init);
+        function init() {
+            const youtubeids = ['9EOavqZG6mA', 'bAwmI90AqPk', 'QB3h_su1WBw', 'UgOAW-LL6k0'];
+            let nowindex = 0;
+
+            // 3. This function creates an <iframe> (and YouTube player)
+            //    after the API code downloads.
+            var player;
+            function youtubestart() {
+                console.log(nowindex);
+                document.getElementById('player').innerHTML = '<div id="video"></div>';
+                player = new YT.Player('video', {
+                    height: '360',
+                    width: '640',
+                    videoId: youtubeids[nowindex],
+                    events: {
+                        'onReady': onPlayerReady,
+                        'onStateChange': onPlayerStateChange
+                    }
+                });
+                nowindex++;
+                if (nowindex == youtubeids.length) {
+                    nowindex = 0;
+                }
+            }
+
+            // 4. The API will call this function when the video player is ready.
+            function onPlayerReady(event) {
+                console.log('play');
+                event.target.playVideo();
+            }
+
+            // 5. The API calls this function when the player's state changes.
+            //    The function indicates that when playing a video (state=1),
+            //    the player should play for six seconds and then stop.
+            function onPlayerStateChange(event) {
+                if (event.data === YT.PlayerState.ENDED) {
+                    player.stopVideo();
+                    youtubestart();
+                }
+            }
+
+
+            const bc = new BroadcastChannel('3a');
+            bc.onmessage = function (e) {
+                if (e.data === 'congra') {
+                    player.mute();
+                    console.log('mute');
+                } else if (e.data === 'congraout') {
+                    player.unMute();
+                    console.log('unmute');
+                }
+            }
+            youtubestart();
+        };
+    </script>
+</body>
+
+</html>
