@@ -112,10 +112,13 @@ const server = http.createServer(function (req, res) {
                 if (
                     postdata.boardname != null &&
                     postdata.name != null &&
-                    postdata.score != null
+                    postdata.score != null &&
+                    postdata.pass != null
                 ) {
-                    console.log(postdata);
-                    pushscore(postdata.boardname, postdata.name, postdata.score - 0);
+                    if (postdata.pass === "kinokotakenoko") {
+                        console.log(postdata);
+                        pushscore(postdata.boardname, postdata.name, postdata.score - 0);
+                    }
                 } else {
                     console.log(postdata);
                 }
@@ -251,8 +254,14 @@ function deletescore(boardname, id) {
                         },
                     })
                 );
-                if (deletedscore > board[boardname].score[0].score) {
-                    topchange();
+                if (board[boardname].sort === 'up') {
+                    if (deletedscore > board[boardname].score[0].score) {
+                        topchange();
+                    }
+                } else if (board[boardname].sort === 'down') {
+                    if (deletedscore < board[boardname].score[0].score) {
+                        topchange();
+                    }
                 }
             }
         );
@@ -478,26 +487,42 @@ sock.on("connection", (ws) => {
                     );
                 }
                 if (perm > 1) {
-                    if (Object.prototype.hasOwnProperty.call(board, "top")) {
-                        board.top.people.push(send);
-                        const viewers = sock.clients.size;
-                        const senddata = {
-                            type: "top",
-                            data: {
-                                viewers: viewers,
-                                date: getNowDate(),
-                                score: {},
-                                board: Object.keys(board).filter(v => v !== 'top')
-                            },
-                        };
-                        Object.keys(board).forEach(e => {
-                            if (e !== 'top') {
-                                senddata.data.score[e] = board[e].score[0];
-                                senddata.data.score[e].counter = board[e].counter;
-                            }
-                        });
-                        nowboard = 'top';
-                        send(senddata);
+                    if (m.data.boardname === 'top') {
+                        if (Object.prototype.hasOwnProperty.call(board, "top")) {
+                            board.top.people.push(send);
+                            const viewers = sock.clients.size;
+                            const senddata = {
+                                type: "top",
+                                data: {
+                                    viewers: viewers,
+                                    date: getNowDate(),
+                                    score: {},
+                                    board: Object.keys(board).filter(v => v !== 'top')
+                                },
+                            };
+                            Object.keys(board).forEach(e => {
+                                if (e !== 'top') {
+                                    senddata.data.score[e] = board[e].score[0];
+                                    senddata.data.score[e].counter = board[e].counter;
+                                }
+                            });
+                            nowboard = 'top';
+                            send(senddata);
+                        }
+                    } else {
+                        if (Object.prototype.hasOwnProperty.call(board, m.data.boardname)) {
+                            board[m.data.boardname].people.push(send);
+                            nowboard = m.data.boardname;
+                            send({
+                                type: "getboard",
+                                data: {
+                                    boardname: m.data.boardname,
+                                    score: board[m.data.boardname].score,
+                                    sort: board[m.data.boardname].sort,
+                                    counter: board[m.data.boardname].counter,
+                                },
+                            });
+                        }
                     }
                 }
             }

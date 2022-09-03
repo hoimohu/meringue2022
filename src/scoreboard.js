@@ -1,4 +1,7 @@
 let runkey;
+let display1st = false;
+let displaycongra = false;
+let bch = null;
 (function init(closecounter = 0) {
   const key = Symbol();
   runkey = key;
@@ -26,11 +29,6 @@ let runkey;
   const sortbtn = document.getElementById("sort");
 
   const board = {};
-
-  let display1st = false;
-  let displaycongra = false;
-
-  let bch = null;
 
   let setting = {
     p: null,
@@ -581,6 +579,7 @@ let runkey;
       if (running != null || running === null) {
         running = true;
       }
+      closecounter = 0;
       console.log("[OPEN]せつぞく済みなり〜");
       const cookie = document.cookie.split("; ");
       cookie.forEach((e) => {
@@ -600,21 +599,24 @@ let runkey;
           type: "password",
           data: {
             p: setting.p,
+            boardname: (category.value !== '') ? category.value : 'top'
           },
         });
       }
       category.addEventListener("change", () => {
-        if (category.value === "top") {
-          send({
-            type: "top",
-          });
-        } else {
-          send({
-            type: "getboard",
-            data: {
-              boardname: category.value,
-            },
-          });
+        if (key === runkey) {
+          if (category.value === "top") {
+            send({
+              type: "top",
+            });
+          } else {
+            send({
+              type: "getboard",
+              data: {
+                boardname: category.value,
+              },
+            });
+          }
         }
       });
     }
@@ -796,14 +798,11 @@ let runkey;
         xhr.open('POST', 'https://spiffy-tough-megaraptor.glitch.me/', true);
         xhr.setRequestHeader('content-type', 'application/x-www-form-urlencoded;charset=UTF-8');
 
-        const request = encodeURIComponent("msg=wsclosedbtn,cc" + closecounter + ',uid:' + uid);
+        const request = encodeURIComponent("msg=wsclosedbtn,cc" + closecounter + ',uid:' + setting.uid);
         xhr.send(request);
         location.reload();
       });
     } else {
-      if (bch != null) {
-        bch.close();
-      }
       init(closecounter);
     }
   });
@@ -816,7 +815,7 @@ let runkey;
         xhr.open('POST', 'https://spiffy-tough-megaraptor.glitch.me/', true);
         xhr.setRequestHeader('content-type', 'application/x-www-form-urlencoded;charset=UTF-8');
 
-        const request = encodeURIComponent("msg=wserrmsgbtn,cc:" + closecounter + ',uid:' + uid);
+        const request = encodeURIComponent("msg=wserrmsgbtn,cc:" + closecounter + ',uid:' + setting.uid);
         xhr.send(request);
       });
     }

@@ -2,10 +2,10 @@
 <html lang="ja">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="robots" content="noindex,nofollow" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>びーじーえむ</title>
+    <meta name="robots" content="noindex , nofollow" />
 </head>
 
 <body>
@@ -19,9 +19,15 @@
     <script src="https://www.youtube.com/iframe_api"></script>
     <script>
         //yt start
-        document.getElementById('startbutton').addEventListener('click', init);
+        document.getElementById("startbutton").addEventListener("click", init);
         function init() {
-            const youtubeids = ['9EOavqZG6mA', 'bAwmI90AqPk', 'QB3h_su1WBw', 'UgOAW-LL6k0'];
+            const youtubeids = [
+                "9EOavqZG6mA",
+                "bAwmI90AqPk",
+                "QB3h_su1WBw",
+                "UgOAW-LL6k0",
+                "Opv70X1t98U",
+            ];
             let nowindex = 0;
 
             // 3. This function creates an <iframe> (and YouTube player)
@@ -29,15 +35,16 @@
             var player;
             function youtubestart() {
                 console.log(nowindex);
-                document.getElementById('player').innerHTML = '<div id="video"></div>';
-                player = new YT.Player('video', {
-                    height: '360',
-                    width: '640',
+                document.getElementById("player").innerHTML =
+                    '<div id="video"></div>';
+                player = new YT.Player("video", {
+                    height: "360",
+                    width: "640",
                     videoId: youtubeids[nowindex],
                     events: {
-                        'onReady': onPlayerReady,
-                        'onStateChange': onPlayerStateChange
-                    }
+                        onReady: onPlayerReady,
+                        onStateChange: onPlayerStateChange,
+                    },
                 });
                 nowindex++;
                 if (nowindex == youtubeids.length) {
@@ -47,7 +54,7 @@
 
             // 4. The API will call this function when the video player is ready.
             function onPlayerReady(event) {
-                console.log('play');
+                console.log("play");
                 event.target.playVideo();
             }
 
@@ -61,19 +68,18 @@
                 }
             }
 
-
-            const bc = new BroadcastChannel('3a');
+            const bc = new BroadcastChannel("3a");
             bc.onmessage = function (e) {
-                if (e.data === 'congra') {
+                if (e.data === "congra") {
                     player.mute();
-                    console.log('mute');
-                } else if (e.data === 'congraout') {
+                    console.log("mute");
+                } else if (e.data === "congraout") {
                     player.unMute();
-                    console.log('unmute');
+                    console.log("unmute");
                 }
-            }
+            };
             youtubestart();
-        };
+        }
     </script>
 </body>
 
