@@ -7,6 +7,7 @@ let bch = null;
   runkey = key;
   // let sock = new WebSocket("ws://127.0.0.1:3000");
   let sock = new WebSocket("wss://cooperative-cliff-grenadilla.glitch.me");
+  // let sock = new WebSocket("wss://mangrove-rocky-client.glitch.me");
 
   function send(m) {
     if (sock != null && key === runkey) {
@@ -792,7 +793,7 @@ let bch = null;
     }
     console.log("[CLOSED]ご利用ありがとうございました。");
     closecounter++;
-    if (closecounter > 2 || setting.cl) {
+    if ((closecounter > 2 || setting.cl) && display1st === false) {
       notice("通信が切断されました", () => {
         const xhr = new XMLHttpRequest();
         xhr.open('POST', 'https://spiffy-tough-megaraptor.glitch.me/', true);
@@ -803,7 +804,11 @@ let bch = null;
         location.reload();
       });
     } else {
-      init(closecounter);
+      if (closecounter < 10) {
+        init(closecounter);
+      } else {
+        setTimeout(() => init(closecounter), 10000);
+      }
     }
   });
 
