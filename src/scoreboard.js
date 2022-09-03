@@ -24,6 +24,7 @@ let bch = null;
   const category = document.getElementById("category");
 
   const rankingbox = document.getElementById("score");
+  rankingbox.innerHTML = '<hr>しばらく待ってもこの表示が消えない場合は、パスワードを間違えている可能性があります。右下の「設定」から再設定してみてください。';
 
   const createbtn = document.getElementById("create");
 
@@ -643,7 +644,7 @@ let bch = null;
             m.data.date +
             "時点で記録表を見ている人数: " +
             m.data.viewers +
-            "</span></p><hr><p>本日はお越しくださりありがとうございます。</p><p>ページ左上にある「種目を選択」の横の枠から、記録が見たい種目を選択してください。</p><hr>";
+            "</span></p><hr><p>本日はお越しくださりありがとうございます。</p><p>ページ左上にある「種目を選択」のボックスから、記録が見たい種目を選択してください！</p><hr>";
           const h2 = document.createElement('h2');
           h2.innerText = '現在の最高記録';
           let h2counter = 0;
